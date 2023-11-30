@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import scipy.sparse as sps
+from Data_manager.split_functions.split_train_validation_random_holdout import split_train_in_two_percentage_global_sample
 
 class DataLoader:
 
@@ -8,10 +9,10 @@ class DataLoader:
     ITEM = "ItemID"
     DATA = "data"
 
-    def __init__(self, data_train_file_path, data_test_file_path):
+    def __init__(self, path):
 
-        self.data_train_file_path = data_train_file_path
-        self.data_test_file_path = data_test_file_path
+        self.data_train_file_path = path + "/data_train.csv"
+        self.data_test_file_path = path + "/data_target_users_test.csv"
         self.data_train = None
         self.data_test = None
         self.URM = None
@@ -34,19 +35,15 @@ class DataLoader:
         self.URM = sps.coo_matrix((self.data_train[self.DATA].values, 
                                 (self.data_train[self.USER].values, self.data_train[self.ITEM].values)))
 
-    def split_the_dataset(self, train_test_split):
-
-        n_interactions = (self.URM_all).nnz
-
-        train_mask = np.random.choice([True,False], n_interactions, p=[train_test_split, 1-train_test_split])
-
-        self.URM_train = sps.csr_matrix((self.URM.data[train_mask],
-                                    (self.URM.row[train_mask], self.URM.col[train_mask])))
-
-        validation_mask = np.logical_not(train_mask)
-
-        self.URM_validation = sps.csr_matrix((self.URM.data[validation_mask],
-                                    (self.URM.row[validation_mask], self.URM.col[validation_mask])))
+    @staticmethod
+    def split_the_dataset(URM, train_test_split, sets):
+        if sets not in [2, 3]:
+            raise ValueError('Input needs to be 2 or 3')
+        URMs = split_train_in_two_percentage_global_sample(URM, train_percentage=train_test_split)
+        if sets == 3:
+            URMs3 = split_train_in_two_percentage_global_sample(URMs[0], train_percentage=train_test_split)
+            return URMs3[0], URMs3[1], URMs[1]
+        return URMs
 
     def get_target_users(self):
         
