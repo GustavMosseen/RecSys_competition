@@ -1,22 +1,24 @@
 from Hybrid import Hybrid
 from tqdm import tqdm
 from DataLoader import DataLoader
+from PrintTargetUsers import write_target_users
 
-data_train_file_path = "/Users/anadrmic/Desktop/POLIMI/New Folder With Items/2/RS/competition/recommender-system-2023-challenge-polimi/data_train.csv"
-data_test_file_path = "/Users/anadrmic/Desktop/POLIMI/New Folder With Items/2/RS/competition/recommender-system-2023-challenge-polimi/data_target_users_test.csv"
-output_file = "svd_user_alpha_.csv"
+# data_path = "/Users/anadrmic/Desktop/POLIMI/New Folder With Items/2/RS/competition/recommender-system-2023-challenge-polimi"
+data_path = "/Users/gustavmosseen/PycharmProjects/pythonProject/RecommenderSystems"
+output_file = "hybrid_test_after_hp3_hplambda1.csv"
 
-dl = DataLoader(data_train_file_path, data_test_file_path)
+dl = DataLoader(data_path)
 targets = dl.get_target_users()
 dl_URM = dl.URM.tocsr()
 
+# Split data
+# URM_train, URM_validation = dl.split_the_dataset(dl_URM, 0.7, 2)
+# evaluator_validation = EvaluatorHoldout(URM_validation, cutoff_list=[10])
+
 recommender = Hybrid(dl_URM)
-recommender.fit()  
+recommender.fit(lambda1=6,
+                lambda2=7,
+                lambda3=1)
 
-f = open(output_file, "w+")
-f.write("user_id,item_list\n")
-
-for t in tqdm(targets):
-    recommended_items = recommender.recommend(t, cutoff=10, remove_seen_flag=True)
-    well_formatted = " ".join([str(x) for x in recommended_items])
-    f.write(f"{t}, {well_formatted}\n")
+# Print the target users
+write_target_users(recommender, output_file, targets)
